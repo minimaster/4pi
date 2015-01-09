@@ -313,7 +313,6 @@ static int gcode_process_command()
 				case 1:
 					get_coordinates();
 					prepare_move();
-					printf("done G1\r\n");
 					break;
 				case 2:
 					get_arc_coordinates();
@@ -1133,7 +1132,8 @@ static void gcode_line_received()
 
 		parserState.parsePos = trim_line(parserState.commandBuffer);
 
-//		DEBUG("gcode line: '%s'\r\n",parserState.parsePos);
+//		DEBUG("G: %s\r\n",parserState.parsePos);
+		printf("G: %s\r\n", parserState.commandBuffer);
 		if (gcode_process_command() == SEND_REPLY)
 		{
             if (sdcard_isreplaying() == false)
