@@ -45,7 +45,7 @@ BOARD = 4pi
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 3
+TRACE_LEVEL = 4
 
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -Os
@@ -100,10 +100,10 @@ TARGET_OPTS =
 endif
 
 CFLAGS += $(TARGET_OPTS)
-CFLAGS += -Wall -mlong-calls -ffunction-sections
+CFLAGS += -Wall -mlong-calls -ffunction-sections -fdata-sections
 CFLAGS += -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL)
 ASFLAGS = $(TARGET_OPTS) -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -g $(OPTIMIZATION) -nostartfiles $(TARGET_OPTS) -Wl,--gc-sections
+LDFLAGS = -g $(OPTIMIZATION) -nostartfiles $(TARGET_OPTS) -Wl,--gc-sections -Wl,-Map=$(OUTPUT).map
 
 #-------------------------------------------------------------------------------
 #		Files
