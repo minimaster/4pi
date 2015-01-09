@@ -141,7 +141,7 @@
 #define DEFAULT_MINTRAVELFEEDRATE     0.0
 
 // If defined the movements slow down when the look ahead buffer is only half full
-#define SLOWDOWN
+//#define SLOWDOWN
 
 
 //-----------------------------------------------------------------------
