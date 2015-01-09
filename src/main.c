@@ -198,6 +198,8 @@ int main()
  *
  */
 
+#include "utility/trace.h"
+
 #undef WEAK
 #define WEAK
 #define FAIL() printf("%s()\r\n", __func__)
@@ -227,7 +229,7 @@ int backtrace(void ** array, int size)
 
     if (__builtin_return_address(0) != frame_p->lr)
     {
-        printf("backtrace error: __builtin_return_address(0) != frame_p->lr\n");
+        printf("backtrace error: __builtin_return_address(0) != frame_p->lr\r\n");
         return frame_count;
     }
 
@@ -290,9 +292,18 @@ WEAK void HardFault_Handler(void)
 	int c = backtrace(bt, 20);
 	int i;
 
-	printf("Stack dump: %d frames\r\n", c);
-	for (i = 0; i < c; i++)
-		printf("0x%X\r\n", (unsigned)bt[i]);
+	if (0 == c)
+	{
+        printf("Stack dump:\r\n");
+        printf("&i:0x%X, &c:0x%X\r\n", (unsigned)&i, (unsigned)&c);
+        TRACE_DumpMemory((unsigned char*)&i, (char*)&_estack - (char*)&i, (unsigned)&_estack);
+	}
+	else
+	{
+	    printf("Stack dump: %d frames\r\n", c);
+	    for (i = 0; i < c; i++)
+	        printf("0x%X\r\n", (unsigned)bt[i]);
+	}
 
 	while(1);
 }
