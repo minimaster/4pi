@@ -170,52 +170,6 @@
 #endif
 
 //------------------------------------------------------------------------------
-/// Initializes the trace for ISP project
-/// \param mode  DBGU mode.
-/// \param baudrate  DBGU baudrate.
-/// \param mck  Master clock frequency.
-//------------------------------------------------------------------------------
-#if (TRACE_LEVEL==0) && (DYN_TRACES==0)
-    #define TRACE_CONFIGURE_ISP(mode, baudrate, mck) {}
-#elif defined(TRACE_DBGU)
-    #define TRACE_CONFIGURE_ISP(mode, baudrate, mck) { \
-        const Pin pinsDbgu[] = {PINS_DBGU}; \
-        PIO_Configure(pinsDbgu, PIO_LISTSIZE(pinsDbgu)); \
-        DBGU_Configure(mode, baudrate, mck); \
-    }
-#elif defined(TRACE_USART_0)
-    #define TRACE_CONFIGURE_ISP(mode, baudrate, mck) { \
-        const Pin pinsUsart[] = {PIN_USART0_TXD, PIN_USART0_RXD}; \
-        AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_US0;\
-        AT91C_BASE_US0->US_IDR = 0xFFFFFFFF;\
-        PIO_Configure(pinsUsart, PIO_LISTSIZE(pinsUsart)); \
-        USART_Configure(AT91C_BASE_US0,USART_MODE_ASYNCHRONOUS, baudrate, mck); \
-        USART_SetTransmitterEnabled(AT91C_BASE_US0,1);\
-        USART_SetReceiverEnabled(AT91C_BASE_US0,1);\
-    }
-#elif defined(TRACE_USART_1)
-    #define TRACE_CONFIGURE_ISP(mode, baudrate, mck) { \
-        const Pin pinsUsart[] = {PIN_USART1_TXD, PIN_USART1_RXD}; \
-        AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_US1;\
-        AT91C_BASE_US1->US_IDR = 0xFFFFFFFF;\
-        PIO_Configure(pinsUsart, PIO_LISTSIZE(pinsUsart)); \
-        USART_Configure(AT91C_BASE_US1,USART_MODE_ASYNCHRONOUS, baudrate, mck); \
-        USART_SetTransmitterEnabled(AT91C_BASE_US1,1);\
-        USART_SetReceiverEnabled(AT91C_BASE_US1,1);\
-    }
-#elif defined(TRACE_USART_2)
-    #define TRACE_CONFIGURE_ISP(mode, baudrate, mck) { \
-        const Pin pinsUsart[] = {PIN_USART2_TXD, PIN_USART2_RXD}; \
-        AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_US2;\
-        AT91C_BASE_US2->US_IDR = 0xFFFFFFFF;\
-        PIO_Configure(pinsUsart, PIO_LISTSIZE(pinsUsart)); \
-        USART_Configure(AT91C_BASE_US2,USART_MODE_ASYNCHRONOUS, baudrate, mck); \
-        USART_SetTransmitterEnabled(AT91C_BASE_US2,1);\
-        USART_SetReceiverEnabled(AT91C_BASE_US2,1);\
-    }
-#endif
-
-//------------------------------------------------------------------------------
 /// Macros TRACE_PutChar & TRACE_GetChar & TRACE_IsRxReady
 //------------------------------------------------------------------------------
 #if defined(TRACE_DBGU)    
