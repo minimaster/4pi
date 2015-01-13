@@ -295,7 +295,7 @@ WEAK void HardFault_Handler(void)
 	if (0 == c)
 	{
         printf("Stack dump:\r\n");
-        printf("&i:0x%X, &c:0x%X\r\n", (unsigned)&i, (unsigned)&c);
+        printf("&i:0x%X, &c:0x%X, stack top:0x%X\r\n", (unsigned)&i, (unsigned)&c, (unsigned)&_estack);
         TRACE_DumpMemory((unsigned char*)&i, (char*)&_estack - (char*)&i, (unsigned)&_estack);
 	}
 	else
