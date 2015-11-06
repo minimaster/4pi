@@ -6,6 +6,9 @@
  *      Author: Martin Thomas, 3BSD license
  */
 
+//int __errno;
+//int _sbrk(int incr) { return 0; }
+#if 0
 #include <reent.h>
 #include <errno.h>
 #include <stdlib.h> /* abort */
@@ -110,3 +113,4 @@ int _write(int file, int *ptr, int len)
 	}
 	return len;
 }
+#endif

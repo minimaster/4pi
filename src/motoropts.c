@@ -265,7 +265,7 @@ void motor_setdir(unsigned char axis, unsigned char dir){
     }
 }
 
-__attribute__((always_inline)) void motor_step(unsigned char axis){
+inline void motor_step(unsigned char axis){
     switch(axis){
         case(0):
             PIO_Set(&XSTEP);
@@ -284,7 +284,8 @@ __attribute__((always_inline)) void motor_step(unsigned char axis){
             break;
     }
 }
-__attribute__((always_inline)) void motor_unstep(){
+
+inline void motor_unstep(){
     PIO_Clear(&XSTEP);
     PIO_Clear(&YSTEP);
     PIO_Clear(&ZSTEP);

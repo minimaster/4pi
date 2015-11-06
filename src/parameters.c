@@ -431,7 +431,7 @@ void FLASH_LoadSettings(void)
 	else
 	{
 		printf("VER NOT OK\r\n");
-		usb_printf("Flash Error Version  Load Initvalues\r\n");
+		usb_printf("Flash Error Version  Load Init values\r\n");
 		//Error --> load init Parameters
 		init_parameters();
 	}

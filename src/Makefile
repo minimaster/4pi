@@ -45,7 +45,7 @@ BOARD = 4pi
 # TRACE_LEVEL_ERROR      2
 # TRACE_LEVEL_FATAL      1
 # TRACE_LEVEL_NO_TRACE   0
-TRACE_LEVEL = 4
+TRACE_LEVEL = 5
 
 # Optimization level, put in comment for debugging
 OPTIMIZATION = -Os
@@ -94,7 +94,7 @@ INCLUDES += -I$(EXT_LIBS)
 INCLUDES += -I$(EXT_LIBS)/fat
 
 ifeq ($(CHIP_CORE), cortexm3)
-TARGET_OPTS = -mcpu=cortex-m3 -mthumb
+TARGET_OPTS = -mcpu=cortex-m3 -mthumb -fno-common 
 else
 TARGET_OPTS = 
 endif
@@ -103,7 +103,8 @@ CFLAGS += $(TARGET_OPTS)
 CFLAGS += -Wall -mlong-calls -ffunction-sections -fdata-sections
 CFLAGS += -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL)
 ASFLAGS = $(TARGET_OPTS) -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
-LDFLAGS = -g $(OPTIMIZATION) -nostartfiles $(TARGET_OPTS) -Wl,--gc-sections -Wl,-Map=$(OUTPUT).map
+LDFLAGS = -g $(OPTIMIZATION) -Wl,-cref -nostartfiles -nostdlib $(TARGET_OPTS) -Wl,--gc-sections -Wl,-Map=$(OUTPUT).map
+LDLIBS =   -lgcc -lm -lc
 
 #-------------------------------------------------------------------------------
 #		Files
@@ -205,6 +206,7 @@ C_SOURCES += flashd_eefc.c
 C_SOURCES += sdcard.c
 C_SOURCES += gcode_parser.c
 C_SOURCES += globals.c
+C_SOURCES += strtod.c
 
 #media
 C_SOURCES += Media.c
@@ -261,7 +263,7 @@ ASM_OBJECTS_$(1) = $(ASM_SOURCES:%.S=$(OBJ)/$(1)_%.o)
 $(1): $(OUTPUT)-$(1).bin
 
 $(OUTPUT)-$(1).elf: $$(ASM_OBJECTS_$(1)) $$(C_OBJECTS_$(1)) | $(BIN)
-	$(CC) $(LDFLAGS) -T"$(AT91LIB)/boards/$(BOARD)/$(CHIP)/$(1).lds" -o $$@ $$^ -lm
+	$(CC) $(LDFLAGS) -T"$(AT91LIB)/boards/$(BOARD)/$(CHIP)/$(1).lds" -o $$@ $$^ $(LDLIBS)
 	$(SIZE) $$^ $$@
 
 $$(C_OBJECTS_$(1)): $(OBJ)/$(1)_%.o: %.c Makefile | $(OBJ) $(DEPDIR)

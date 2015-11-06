@@ -102,24 +102,24 @@ void do_periodic()
 int main()
 {
 	
-    TRACE_CONFIGURE(DBGU_STANDARD, 115200, BOARD_MCK);
+    TRACE_CONFIGURE(DBGU_STANDARD, 1000000u /*115200*/, BOARD_MCK);
     printf("-- %s\r\n", BOARD_NAME);
     printf("-- Compiled: %s %s --\r\n", __DATE__, __TIME__);
 
     // If they are present, configure Vbus & Wake-up pins
     //PIO_InitializeInterrupts(0);
 	
-	//-------- Init parameters --------------
+    //-------- Init UART --------------
+    printf("USB Seriel INIT\r\n");
+    samserial_init();
+
+    //-------- Init parameters --------------
 	printf("INIT Parameters\r\n");
 	init_parameters();
 	
 	//-------- Load parameters from Flash --------------
 	printf("Load parameters from Flash\r\n");
 	FLASH_LoadSettings();
-	
-    //-------- Init UART --------------
-	printf("USB Seriel INIT\r\n");
-	samserial_init();
 	
 	//-------- Init ADC without Autostart --------------
 	printf("Init ADC\r\n");
@@ -229,7 +229,8 @@ int backtrace(void ** array, int size)
 
     if (__builtin_return_address(0) != frame_p->lr)
     {
-        printf("backtrace error: __builtin_return_address(0) != frame_p->lr\r\n");
+        printf("backtrace error: __builtin_return_address(0):0x%X != frame_p->lr:0x%X\r\n",
+            (uintptr_t)__builtin_return_address(0), (uintptr_t)frame_p->lr);
         return frame_count;
     }
 
@@ -287,6 +288,7 @@ WEAK void HardFault_Handler(void)
 	printf("MMAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_MMAR);
 	printf("BFAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_BFAR);
 	printf("AFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_AFSR);
+	printf("ICSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_ICSR);
 
 	static void *bt[20];
 	int c = backtrace(bt, 20);

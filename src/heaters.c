@@ -442,6 +442,7 @@ void heater_PID_control(heater_struct *hotend)
 	signed short delta_temp;
 	signed short heater_duty;
     signed short akt_temp;
+    //int print = 0;
   
 	akt_temp = analog2temp_convert(adc_read(hotend->ad_cannel),hotend->thermistor_type);
     if (&heaters[0] == hotend)
@@ -449,8 +450,13 @@ void heater_PID_control(heater_struct *hotend)
         extern volatile unsigned long timestamp;
         static unsigned long recent = 0;
         unsigned long now = timestamp;
+        int delta = akt_temp - hotend->akt_temp;
         
-        printf("H0 A:%d  T:%d  dt:%u\r\n", hotend->target_temp, akt_temp, (unsigned)(now - recent));
+        if (abs(delta) > 3 )
+        {
+            printf("H:%d  T:%d  dt:%u  Tp:%d  dT:%d", hotend->target_temp, akt_temp, (unsigned)(now - recent), hotend->akt_temp, delta);
+            //print = 1;
+        }
         recent = now;
     }
     
@@ -519,10 +525,9 @@ void heater_PID_control(heater_struct *hotend)
 	else
 		hotend->pwm = (unsigned char)heater_duty;
 
-    if (&heaters[0] == hotend)
-    {
-        printf("PWM: %u  P:%d I:%d D:%d\r\n", hotend->pwm, hotend->pTerm, hotend->iTerm, hotend->dTerm);
-    }
+    //if (print /*&& &heaters[0] == hotend*/)
+    //    printf("  PWM: %u  P:%d I:%d D:%d\r\n", hotend->pwm, hotend->pTerm, hotend->iTerm, hotend->dTerm);
+
 }
 
 //--------------------------------------------------
