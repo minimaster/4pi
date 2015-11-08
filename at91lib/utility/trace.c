@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support 
+ *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
  *
@@ -42,7 +42,7 @@
 #if !defined(NOTRACE) && (DYN_TRACES == 1)
     unsigned int traceLevel = TRACE_LEVEL;
 #endif
-  
+
 #ifndef NOFPUT
 #include <stdio.h>
 #include <stdarg.h>
@@ -120,15 +120,7 @@ signed int putchar(signed int c)
 //------------------------------------------------------------------------------
 static void PrintChar(unsigned char c)
 {
-    if( (/*c >= 0x00 &&*/ c <= 0x1F) ||
-        (c >= 0xB0 && c <= 0xDF) ) {
-
-       printf(".");
-    }
-    else {
-
-       printf("%c", c);
-    }
+    printf("%c", (0x20 <= c && c < 0x7F) ? c : '.' );
 }
 
 //------------------------------------------------------------------------------
@@ -164,15 +156,16 @@ void TRACE_DumpMemory(
     )
 {
     unsigned int i, j;
-    unsigned int lastLineStart;
+    //unsigned int lastLineStart;
     unsigned char* pTmp;
 
-    for (i=0; i < (size / 16); i++) {
+    for (i=0; i < ((size + 15) / 16); i++) {
 
         printf("0x%08X: ", address + (i*16));
         pTmp = (unsigned char*)&pBuffer[i*16];
         for (j=0; j < 4; j++) {
-            printf("%02X%02X%02X%02X ", pTmp[0],pTmp[1],pTmp[2],pTmp[3]);
+            //printf("%02X%02X%02X%02X ", pTmp[0],pTmp[1],pTmp[2],pTmp[3]);
+            printf("%02X%02X%02X%02X ", pTmp[3],pTmp[2],pTmp[1],pTmp[0]);
             pTmp += 4;
         }
 
@@ -184,6 +177,7 @@ void TRACE_DumpMemory(
         printf("\r\n");
     }
 
+#if 0
     if( (size%16) != 0) {
         lastLineStart = size - (size%16);
         printf("0x%08X: ", address + lastLineStart);
@@ -208,8 +202,9 @@ void TRACE_DumpMemory(
 
         printf("\r\n");
     }
+#endif
 }
-    
+
 //------------------------------------------------------------------------------
 /// Reads an integer
 //------------------------------------------------------------------------------
@@ -227,16 +222,16 @@ unsigned char TRACE_GetInteger(unsigned int *pValue)
         }
         else if(key == 0x0D || key == ' ') {
             if(nbNb == 0) {
-                printf("\r\nWrite a number and press ENTER or SPACE!\r\n");       
-                return 0; 
+                printf("\r\nWrite a number and press ENTER or SPACE!\r\n");
+                return 0;
             } else {
-                printf("\r\n"); 
+                printf("\r\n");
                 *pValue = value;
                 return 1;
             }
         } else {
             printf("\r\n'%c' not a number!\r\n", key);
-            return 0;  
+            return 0;
         }
     }
 }
@@ -245,8 +240,8 @@ unsigned char TRACE_GetInteger(unsigned int *pValue)
 /// Reads an integer and check the value
 //------------------------------------------------------------------------------
 unsigned char TRACE_GetIntegerMinMax(
-    unsigned int *pValue, 
-    unsigned int min, 
+    unsigned int *pValue,
+    unsigned int min,
     unsigned int max
     )
 {
@@ -255,13 +250,13 @@ unsigned char TRACE_GetIntegerMinMax(
     if( TRACE_GetInteger(&value) == 0) {
         return 0;
     }
-    
+
     if(value < min || value > max) {
         printf("\r\nThe number have to be between %d and %d\r\n", min, max);
-        return 0; 
+        return 0;
     }
 
-    printf("\r\n"); 
+    printf("\r\n");
     *pValue = value;
     return 1;
 }
@@ -285,15 +280,15 @@ unsigned char TRACE_GetHexa32(unsigned int *pValue)
         }
         else if(key >= 'a' &&  key <= 'f' ) {
             value = (value * 16) + (key - 'a' + 10) ;
-        }        
+        }
         else {
-            printf("\r\nIt is not a hexa character!\r\n");       
-            return 0; 
+            printf("\r\nIt is not a hexa character!\r\n");
+            return 0;
         }
     }
 
-    printf("\r\n");    
-    *pValue = value;     
+    printf("\r\n");
+    *pValue = value;
     return 1;
 }
 
