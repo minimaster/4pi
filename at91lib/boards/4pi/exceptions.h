@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support 
+ *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
  *
@@ -67,7 +67,7 @@ extern WEAK void SVC_Handler( void );
 extern WEAK void DebugMon_Handler( void );
 extern WEAK void PendSV_Handler( void );
 extern WEAK void SysTick_Handler( void );
-void IrqHandlerNotUsed(void);
+extern WEAK void IrqHandlerNotUsed(void);
 
 
 // System Controller
@@ -132,4 +132,10 @@ extern WEAK void ADCC1_IrqHandler(void);
 extern WEAK void HDMA_IrqHandler(void);
 // USB Device High Speed UDP_HS
 extern WEAK void UDPD_IrqHandler(void);
+
+extern WEAK void RESERVED0_IrqHandler(void);
+extern WEAK void RESERVED1_IrqHandler(void);
+extern WEAK void RESERVED2_IrqHandler(void);
+extern WEAK void RESERVED3_IrqHandler(void);
+extern WEAK void RESERVED4_IrqHandler(void);
 

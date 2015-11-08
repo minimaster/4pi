@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support 
+ *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
  *
@@ -85,10 +85,13 @@ IntFunc exception_table[] = {
     MemManage_Handler,
     BusFault_Handler,
     UsageFault_Handler,
-    0, 0, 0, 0,             // Reserved
+    RESERVED0_IrqHandler,
+    RESERVED1_IrqHandler,
+    RESERVED2_IrqHandler,
+    RESERVED3_IrqHandler,             // Reserved
     SVC_Handler,
     DebugMon_Handler,
-    0,                      // Reserved
+    RESERVED4_IrqHandler,                      // Reserved
     PendSV_Handler,
     SysTick_Handler,
 
@@ -145,12 +148,12 @@ void __libc_init_array(void)
     count = __preinit_array_end - __preinit_array_start;
     for (i = 0; i < count; i++)
         __preinit_array_start[i] ();
-    
+
     count = __init_array_end - __init_array_start;
     for (i = 0; i < count; i++)
         __init_array_start[i] ();
-    
-    
+
+
 }
 
 //------------------------------------------------------------------------------
@@ -185,18 +188,14 @@ void ResetException(void)
 
         *pDest++ = 0;
     }
-    
+
 #if defined(psram)
     pSrc = (unsigned int *)&_vect_start;
 #else
     pSrc = (unsigned int *)&_sfixed;
-#endif        
-    
-    AT91C_BASE_NVIC->NVIC_VTOFFR = ((unsigned int)(pSrc)) | (0x0 << 7);
+#endif
 
-    TRACE_CONFIGURE(DBGU_STANDARD, 115200, BOARD_MCK);
-    
-    puts("ResetException\r");
+    AT91C_BASE_NVIC->NVIC_VTOFFR = ((unsigned int)(pSrc)) | (0x0 << 7);
 
     __libc_init_array();
 
