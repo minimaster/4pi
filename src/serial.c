@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
- *         ATMEL Microcontroller Software Support 
+ *         ATMEL Microcontroller Software Support
  * ----------------------------------------------------------------------------
  * Copyright (c) 2008, Atmel Corporation
  *
@@ -32,7 +32,7 @@
 #include <pio/pio.h>
 #include <pio/pio_it.h>
 #include <irq/irq.h>
-//#include <utility/trace.h>
+#include <utility/trace.h>
 #include <usb/device/cdc-serial/CDCDSerialDriver.h>
 #include <usb/device/cdc-serial/CDCDSerialDriverDescriptors.h>
 //#include <pmc/pmc.h>
@@ -112,7 +112,7 @@ static void VBus_Configure( void )
     }
     else {
         USBD_Disconnect();
-    }           
+    }
 }
 
 #else
@@ -153,7 +153,9 @@ void USBDCallbacks_Suspended(void)
 
 static void (*callback)(unsigned char)=0;
 
-void samserial_setcallback(void (*c)(unsigned char)){
+void samserial_setcallback(void (*c)(unsigned char))
+{
+    TRACE_DEBUG_WP("SSSC: Set callback 0x%X\r\n", (uint)c);
 	callback=c;
 }
 
@@ -166,13 +168,13 @@ static void UsbDataReceived(unsigned int unused,
                             unsigned int remaining)
 {
     // Check that data has been received successfully
-    
+
     if (status == USBD_STATUS_SUCCESS)
     {
         int i=0;
         if (callback)
         {
-            //printf("calling callback\r\n");
+            TRACE_DEBUG_WP("UDR: Callack 0x%X\r\n", (uint)callback);
             for(i=0;i<received;++i)
             {
                 //printf("calling callback with %c\r\n",usbBuffer[i]);
@@ -187,7 +189,7 @@ static void UsbDataReceived(unsigned int unused,
     else
     {
         puts("UsbDataReceived: Transfer error\r");
-        
+
         //  TRACE_WARNING( "UsbDataReceived: Transfer error\r\n");
     }
 }
@@ -213,31 +215,31 @@ void usb_printf(const char * format, ...)
 {
 	if (!isSerialConnected)
 		return;
-    
+
     if (USBState == STATE_SUSPEND)
         return;
-	
-	unsigned int timeout=1000;
+
+	unsigned int timeout = 200;  // was 1000
 	while(bufferInUse && timeout--)
 	{
 		delay_ms(1);
 	}
-	
+
 	if (bufferInUse)
 	{
 		printf("usb_printf timeout\r\n");
 		return;
 	}
-	
+
 	unsigned int str_len = 0;
 	va_list args;
 	va_start (args, format);
 	str_len = vsprintf (printBuffer,format, args);
 	va_end (args);
 
-	bufferInUse = 1; 
+	bufferInUse = 1;
 	if(CDCDSerialDriver_Write((void *)printBuffer,str_len, UsbWriteCompleted, 0)!= USBD_STATUS_SUCCESS)
-	{		
+	{
 		printf("USB FAIL\r\n");
 		bufferInUse = 0;
 	}
@@ -263,7 +265,7 @@ void samserial_init()
     VBUS_CONFIGURE();
     // Connect pull-up, wait for configuration
     USBD_Connect();
-    
+
     // Driver loop
         while (USBD_GetState() < USBD_STATE_CONFIGURED) {
             if (isSerialConnected)
@@ -272,7 +274,7 @@ void samserial_init()
         isSerialConnected = 1;
         // Start receiving data on the USB
         CDCDSerialDriver_Read(usbBuffer,DATABUFFERSIZE,(TransferCallback) UsbDataReceived,0);
-       
+
 }
 
 
