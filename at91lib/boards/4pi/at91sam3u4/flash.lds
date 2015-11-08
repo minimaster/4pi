@@ -85,9 +85,12 @@ SECTIONS
     {
         . = ALIGN(4);
         _srelocate = .;
-        *(.ramfunc);
-        *(.data);
-		*(.data.*);
+        *(.ramfunc)
+        *(.data*)
+        *(.iplt)
+        *(.igot.plt)
+        *(.v4_bx)
+        *(.vfp11_veneer)
         . = ALIGN(4);
         _erelocate = .;
     } >sram
@@ -95,10 +98,10 @@ SECTIONS
     .bss (NOLOAD) : {
         . = ALIGN(4);
         _szero = .;
-	_bss = .;
-        *(.bss)
-	*(COMMON)
-	_ebss = .;
+	    _bss = .;
+        *(.bss*)
+	    *(COMMON)
+	    _ebss = .;
         . = ALIGN(8);
         _ezero = .;
     } >sram
