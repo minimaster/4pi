@@ -1,26 +1,26 @@
 /*
  Stepper Control
- it pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately. 
+ it pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately.
 
  Originally from Grbl (http://github.com/grbl/grbl)
- 
- 
+
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>. */
- 
- 
- 
- 
+
+
+
+
 #include <board.h>
 #include <pio/pio.h>
 #include <pio/pio_it.h>
@@ -84,8 +84,8 @@ volatile block_t *current_block;  		// A pointer to the block currently being tr
 // Variables used by The Stepper Driver Interrupt
 volatile unsigned char out_bits;        // The next stepping-bits to be output
 volatile long 	counter_x,       		// Counter variables for the bresenham line tracer
-				counter_y, 
-				counter_z,       
+				counter_y,
+				counter_z,
 				counter_e;
 volatile unsigned long step_events_completed; // The number of step events executed in the current block
 
@@ -129,29 +129,28 @@ void enable_endstops(unsigned char check)
 
 void ConfigureTc0_Stepper(void)
 {
-
 	// Enable peripheral clock
     AT91C_BASE_PMC->PMC_PCER = 1 << AT91C_ID_TC0;
     unsigned int freq=1000; 	//Start Frequenz
-    
+
     TC_Configure(AT91C_BASE_TC0, 3 | AT91C_TC_CPCTRG);
-	
-    //AT91C_BASE_TC0->TC_RB = 3; //6*((BOARD_MCK / div)/1000000); //6 uSec per step pulse 
+
+    //AT91C_BASE_TC0->TC_RB = 3; //6*((BOARD_MCK / div)/1000000); //6 uSec per step pulse
     AT91C_BASE_TC0->TC_RC = (BOARD_MCK / 128) / freq; // timerFreq / desiredFreq
 
     // Configure and enable interrupt on RC compare
     IRQ_ConfigureIT(AT91C_ID_TC0, 0, TC0_IrqHandler);
-    
+
 	//AT91C_BASE_TC0->TC_IER = AT91C_TC_CPCS|AT91C_TC_CPBS;
 	AT91C_BASE_TC0->TC_IER = AT91C_TC_CPCS;
-    
+
 	IRQ_EnableIT(AT91C_ID_TC0);
 
     // Start the counter if LED is enabled.
     TC_Start(AT91C_BASE_TC0);
-    
+
 }
- 
+
 
 
 //         __________________________
@@ -164,9 +163,9 @@ void ConfigureTc0_Stepper(void)
 //   |               BLOCK 1            |      BLOCK 2          |    d
 //
 //                           time ----->
-// 
-//  The trapezoid is the shape of the speed curve over time. It starts at block->initial_rate, accelerates 
-//  first block->accelerate_until step_events_completed, then keeps going at constant speed until 
+//
+//  The trapezoid is the shape of the speed curve over time. It starts at block->initial_rate, accelerates
+//  first block->accelerate_until step_events_completed, then keeps going at constant speed until
 //  step_events_completed reaches block->decelerate_after after which it decelerates until the trapezoid generator is reset.
 //  The slope of acceleration is calculated with the leib ramp alghorithm.
 
@@ -174,19 +173,19 @@ void ConfigureTc0_Stepper(void)
 unsigned short calc_timer(unsigned short step_rate)
 {
 	unsigned short timer;
-	
+
 	if(step_rate > MAX_STEP_FREQUENCY) step_rate = MAX_STEP_FREQUENCY;
 
 	if(step_rate < 50) step_rate = 50;
-	
+
 	timer = (unsigned short)((BOARD_MCK / 128) / step_rate);
 
 	if(timer < 10) { timer = 10; }//(40kHz this should never happen)
-	
+
 	return timer;
 }
 
-// Initializes the trapezoid generator from the current block. Called whenever a new 
+// Initializes the trapezoid generator from the current block. Called whenever a new
 // block begins.
 void trapezoid_generator_reset()
 {
@@ -195,9 +194,9 @@ void trapezoid_generator_reset()
 		final_advance = current_block->final_advance;
 		// Do E steps + advance steps
 		e_steps[current_block->active_extruder] += ((advance >>8) - old_advance);
-		old_advance = advance >>8;  
+		old_advance = advance >>8;
 	#endif
-	
+
 	deceleration_time = 0;
 
 	// step_rate to timer interval
@@ -208,27 +207,27 @@ void trapezoid_generator_reset()
 
 }
 
-// "The Stepper Driver Interrupt" - This timer interrupt is the workhorse.  
-// It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately. 
+// "The Stepper Driver Interrupt" - This timer interrupt is the workhorse.
+// It pops blocks from the block_buffer and executes them by pulsing the stepper pins appropriately.
 // Time for ISR is at the moment 14 us --> :-( need to be faster
-// One IO Operation need 500 ns 
+// One IO Operation need 500 ns
 //------------------------------------------------------------------------------
 /// Interrupt handler for TC0 interrupt --> Stepper.
 //------------------------------------------------------------------------------
 void TC0_IrqHandler(void)
-{        
+{
 	volatile unsigned int dummy;
-	
+
 	PIO_Set(&time_check1);
-    
+
     // Clear status bit to acknowledge interrupt
     dummy = AT91C_BASE_TC0->TC_SR;
-	
+
 	if(dummy & AT91C_TC_CPCS)
 	{
 		//Not used at the moment
 	}
-		
+
 	// If there is no current block, attempt to pop one from the buffer
 	if (current_block == NULL)
 	{
@@ -246,12 +245,12 @@ void TC0_IrqHandler(void)
 			#ifdef ADVANCE
 			e_steps[current_block->active_extruder] = 0;
 			#endif
-		} 
+		}
 		else
 		{
 			AT91C_BASE_TC0->TC_RC=500; // ~1kHz.
-		}    
-	} 
+		}
+	}
 
 
 	if (current_block != NULL)
@@ -267,11 +266,11 @@ void TC0_IrqHandler(void)
 				if(pa.x_min_endstop_aktiv > -1)
 				{
 					unsigned char x_min_endstop=(PIO_Get(&X_MIN_PIN) != pa.x_endstop_invert);	//read IO
-					if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0)) 
+					if(x_min_endstop && old_x_min_endstop && (current_block->steps_x > 0))
 					{
 						if(!is_homing)
 							endstop_x_hit=1;
-						else  
+						else
 							step_events_completed = current_block->step_event_count;
 					}
 					else
@@ -286,9 +285,9 @@ void TC0_IrqHandler(void)
 				}
 			}
 		}
-		else { // +direction 
+		else { // +direction
 			motor_setdir(X_AXIS, !pa.invert_x_dir);
-			CHECK_ENDSTOPS 
+			CHECK_ENDSTOPS
 			{
 				if(pa.x_max_endstop_aktiv > -1)
 				{
@@ -297,7 +296,7 @@ void TC0_IrqHandler(void)
 					{
 						if(!is_homing)
 							endstop_x_hit=1;
-						else    
+						else
 							step_events_completed = current_block->step_event_count;
 					}
 					else
@@ -335,7 +334,7 @@ void TC0_IrqHandler(void)
 				}
 				else
 				{
-					endstop_y_hit=0;  
+					endstop_y_hit=0;
 				}
 			}
 		}
@@ -350,7 +349,7 @@ void TC0_IrqHandler(void)
 					{
 						if(!is_homing)
 							endstop_y_hit=1;
-						else  
+						else
 							step_events_completed = current_block->step_event_count;
 					}
 					else
@@ -361,7 +360,7 @@ void TC0_IrqHandler(void)
 				}
 				else
 				{
-					endstop_y_hit=0;  
+					endstop_y_hit=0;
 				}
 			}
 		}
@@ -375,9 +374,9 @@ void TC0_IrqHandler(void)
 					unsigned char z_min_endstop=(PIO_Get(&Z_MIN_PIN) != pa.z_endstop_invert);	//read IO
 					if(z_min_endstop && old_z_min_endstop && (current_block->steps_z > 0))
 					{
-						if(!is_homing)  
+						if(!is_homing)
 							endstop_z_hit=1;
-						else  
+						else
 							step_events_completed = current_block->step_event_count;
 					}
 					else
@@ -388,7 +387,7 @@ void TC0_IrqHandler(void)
 				}
 				else
 				{
-					endstop_z_hit=0;  
+					endstop_z_hit=0;
 				}
 			}
 		}
@@ -403,7 +402,7 @@ void TC0_IrqHandler(void)
 					{
 						if(!is_homing)
 							endstop_z_hit=1;
-						else  
+						else
 							step_events_completed = current_block->step_event_count;
 					}
 					else
@@ -414,23 +413,23 @@ void TC0_IrqHandler(void)
 				}
 				else
 				{
-					endstop_z_hit=0;  
+					endstop_z_hit=0;
 				}
 			}
 		}
 
-		
-	
+
+
 		#ifndef ADVANCE
 		if ((out_bits & (1<<E_AXIS)) != 0) // -direction
-		{  
+		{
 			if(current_block->active_extruder == 1)
 				motor_setdir(E1_AXIS, pa.invert_e_dir);
 			else
 				motor_setdir(E_AXIS, pa.invert_e_dir);
 		}
 		else // +direction
-		{ 
+		{
 			if(current_block->active_extruder == 1)
 				motor_setdir(E1_AXIS, !pa.invert_e_dir);
 			else
@@ -439,8 +438,8 @@ void TC0_IrqHandler(void)
 		#endif //!ADVANCE
 
 		//PIO_Clear(&time_check1);
-		
-		  
+
+
 		#ifdef ADVANCE
 		counter_e += current_block->steps_e;
 		if (counter_e > 0) {
@@ -451,7 +450,7 @@ void TC0_IrqHandler(void)
 			else {
 				e_steps[current_block->active_extruder]++;
 			}
-		}    
+		}
 		#endif //ADVANCE
 
 		counter_x += current_block->steps_x;
@@ -501,19 +500,19 @@ void TC0_IrqHandler(void)
 
 		#ifndef ADVANCE
 		counter_e += current_block->steps_e;
-		if (counter_e > 0) 
+		if (counter_e > 0)
 		{
 			if(current_block->active_extruder == 1)
 				motor_step(E1_AXIS);
 			else
 				motor_step(E_AXIS);
-				
+
 			counter_e -= current_block->step_event_count;
 		}
 		#endif //!ADVANCE
 
-		step_events_completed += 1;  
-		  
+		step_events_completed += 1;
+
 
 		// Calculare new timer value
 		unsigned short timer;
@@ -535,11 +534,11 @@ void TC0_IrqHandler(void)
 			//if(advance > current_block->advance) advance = current_block->advance;
 			// Do E steps + advance steps
 			e_steps[current_block->active_extruder] += ((advance >>8) - old_advance);
-			old_advance = advance >>8;  
+			old_advance = advance >>8;
 			#endif
-		} 
+		}
 		else if (step_events_completed > (unsigned long)current_block->decelerate_after)
-		{   
+		{
 			step_rate = (unsigned short)(((long long)deceleration_time * (long long)current_block->acceleration_rate) >> 24);
 
 			if(step_rate > acc_step_rate) { // Check step_rate stays positive
@@ -561,21 +560,21 @@ void TC0_IrqHandler(void)
 			if(advance < final_advance) advance = final_advance;
 			// Do E steps + advance steps
 			e_steps[current_block->active_extruder] += ((advance >>8) - old_advance);
-			old_advance = advance >>8;  
+			old_advance = advance >>8;
 			#endif //ADVANCE
 		}
-		else 
+		else
 		{
 			AT91C_BASE_TC0->TC_RC = TC_RC_nominal;
 		}
 
-		// If current block is finished, reset pointer 
-		if (step_events_completed >= current_block->step_event_count) 
+		// If current block is finished, reset pointer
+		if (step_events_completed >= current_block->step_event_count)
 		{
 			current_block = NULL;
 			plan_discard_current_block();
-		}   
-	} 
+		}
+	}
 	motor_unstep();
 	PIO_Clear(&time_check1);
 }
