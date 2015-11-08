@@ -52,63 +52,67 @@ extern void samserial_setcallback(void (*c)(unsigned char));
 // GLOBAL VARIABLES
 //--------------------------
 /// Global timestamp in milliseconds since start of application.
-volatile unsigned long timestamp = 1;
+volatile unsigned long timestamp = 0;
 
-  
+
 //----------------------------------------------------------
-//SYSTICK --> INTERRUPT call every 1ms 
+//SYSTICK --> INTERRUPT call every 1ms
 //----------------------------------------------------------
 void SysTick_Handler(void)
 {
-	
 	timestamp++;
-	
-    if(timestamp%10==0)
+}
+
+unsigned long oldtimestamp=1;
+void do_periodic()
+{
+	if (timestamp == oldtimestamp)
+		return;
+
+	oldtimestamp = timestamp;
+
+    if (timestamp % 10 == 0)
         adc_sample();
-    
-    
+
+    if (timestamp % 250 == 0) //every 100 ms
+    {
+        manage_heaters();
+    }
+
+	if (timestamp % 500 == 0)
+	{
+		sdcard_handle_state();
+	}
+
     //temp control goes in here
     //temp0 = chan 5 = adc_read(5) etc (returns unsigned absolute millivolt value).
     //temp1 = chan 3
     //temp2 = chan 1
     //temp3 = chan 2
-    
+
     //if(timestamp%1000==0)//every 1 second
-	//{
-	//  for(i=1;i<9;i++)
-    //  	printf("Channel %u : %u mV\n", i,adc_read(i));
-    //	
-	
-	if(timestamp%250==0) //every 100 ms
-    {
-		manage_heaters();
-    }
-	    
-}
-unsigned long oldtimestamp=1;
-void do_periodic()
-{
-	if (timestamp==oldtimestamp)
-		return;
-	oldtimestamp=timestamp;
-	if (timestamp % 500 == 0)
-	{
-		sdcard_handle_state();
-	}
-	
+    //{
+    //  for(i=1;i<9;i++)
+    //      printf("Channel %u : %u mV\n", i,adc_read(i));
+    //
+
 }
 
-
+extern void * current_block;
 int main()
 {
-	
     TRACE_CONFIGURE(DBGU_STANDARD, 1000000u /*115200*/, BOARD_MCK);
     printf("-- %s\r\n", BOARD_NAME);
     printf("-- Compiled: %s %s --\r\n", __DATE__, __TIME__);
 
+    printf("%s:%u: current_block: 0x%X\r\n", __FILE__, __LINE__, (unsigned)current_block);
     // If they are present, configure Vbus & Wake-up pins
     //PIO_InitializeInterrupts(0);
-	
+
+    //-------- Start SYSTICK (1ms) --------------
+    printf("Configuring systick.\r\n");
+    SysTick_Configure(1, BOARD_MCK/1000, SysTick_Handler);
+
     //-------- Init UART --------------
     printf("USB Seriel INIT\r\n");
     samserial_init();
@@ -116,36 +120,31 @@ int main()
     //-------- Init parameters --------------
 	printf("INIT Parameters\r\n");
 	init_parameters();
-	
+
 	//-------- Load parameters from Flash --------------
 	printf("Load parameters from Flash\r\n");
 	FLASH_LoadSettings();
-	
+
 	//-------- Init ADC without Autostart --------------
 	printf("Init ADC\r\n");
     initadc(0);
-	
+
 	//-------- Init Motor driver --------------
 	printf("Init Motors\r\n");
     motor_setup();
-	
+
 	//-------- Init Heater I/O  --------------
 	printf("Init Heaters\r\n");
     heaters_setup();
-	
-    //-------- Start SYSTICK (1ms) --------------
-	printf("Configuring systick.\r\n");
-	SysTick_Configure(1, BOARD_MCK/1000, SysTick_Handler);
-	
+
 	//-------- Timer 0 for Stepper --------------
 	printf("Init Stepper IO\r\n");
     stepper_setup();	//Timer for Stepper
 
-
 	//-------- Timer 0 for Stepper --------------
 	printf("Configuring Timer 0 Stepper\r\n");
     ConfigureTc0_Stepper();	//Timer for Stepper
-	
+
 	//-------- Timer 1 for heater PWM --------------
 	printf("Configuring Timer 1 PWM.\r\n");
 	ConfigureTc_1();
@@ -153,41 +152,20 @@ int main()
 	//-------- Init Planner Values --------------
 	printf("Plan Init\r\n");
 	plan_init();
-	
+
 	printf("G-Code parser init\r\n");
 	gcode_init(usb_printf);
-	
+
 	//-------- Check for SD card presence -------
 //	sdcard_handle_state();
-	
+
 	//motor_enaxis(0,1);
     //motor_enaxis(1,1);
 	printf("Main loop\r\n");
 	while (1)
 	{
-  		//uncomment to use//sprinter_mainloop();
-    	//main loop events go here
-
 		do_periodic();
-
 		gcode_update();
-/*    	
-		if(buflen < (BUFSIZE-1))
-			get_command();
-
-    	if(buflen > 0)
-		{
-			
-			//-------- Check and execute G-CODE --------------
-			process_commands();
-
-			//-------- Increment G-Code FIFO  --------------
-			buflen = (buflen-1);
-			bufindr++;
-			if(bufindr == BUFSIZE) bufindr = 0;
-			
-		}
-*/		  
     }
 }
 
@@ -204,8 +182,61 @@ int main()
 #define WEAK
 #define FAIL() printf("%s()\r\n", __func__)
 
+#define STR(x) #x
+#define EXCEPTION_HANDLER(name) \
+__attribute__((used)) static const char name ## _str[] = STR(name);\
+__attribute__((naked)) void name(void) {     \
+    __asm volatile (                         \
+        " tst lr, #4                     \n" \
+        " ite eq                         \n" \
+        " mrseq r0, msp                  \n" \
+        " mrsne r0, psp                  \n" \
+        " ldr r1, "STR(name)"_string     \n" \
+        " ldr r2, "STR(name)"_handler    \n" \
+        " bx r2                          \n" \
+        STR(name)"_handler: .word fault_handler\n" \
+        STR(name)"_string: .word "STR(name)"_str\n" \
+    ); }
 
-extern unsigned int _estack;
+
+extern uint _estack;
+
+void fault_handler(const uint32_t *fault_stack, const char * fname)
+{
+    uint r0 = fault_stack[ 0 ];
+    uint r1 = fault_stack[ 1 ];
+    uint r2 = fault_stack[ 2 ];
+    uint r3 = fault_stack[ 3 ];
+    uint r12 = fault_stack[ 4 ];
+    uint lr = fault_stack[ 5 ];
+    uint pc = fault_stack[ 6 ];
+    uint psr = fault_stack[ 7 ];
+
+    printf("%s()\r\n", fname);
+    printf("pc:0x%X lr:0x%X psr:0x%X r12:0x%X\r\n", pc, lr, psr, r12);
+    printf("r0:0x%X r1:0x%X r2:0x%X r3:0x%X\r\n", r0, r1, r2, r3);
+
+    printf("HFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_HFSR);
+    printf("CFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_CFSR);
+    printf("MMAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_MMAR);
+    printf("BFAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_BFAR);
+    printf("AFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_AFSR);
+    printf("ICSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_ICSR);
+    printf("SHCSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_HANDCSR);
+
+    unsigned char i;
+    uintptr_t ia = (uintptr_t)&i;
+    ia += 3;
+    ia &= ~(uintptr_t)3;
+
+    printf("Stack dump:\r\n");
+    printf("&i:0x%X, stack top:0x%X\r\n", ia, (unsigned)&_estack);
+    TRACE_DumpMemory((unsigned char *)ia, (unsigned char*)&_estack - &i, ia);
+
+    while(1);
+}
+
+
 
 struct backtrace_frame_t
 {
@@ -253,400 +284,56 @@ int backtrace(void ** array, int size)
     return frame_count;
 }
 
-//------------------------------------------------------------------------------
-// Default irq handler
-//------------------------------------------------------------------------------
-void IrqHandlerNotUsed(void)
-{
-	FAIL();
-    while(1);
-}
 
-//------------------------------------------------------------------------------
-// Provide weak aliases for each Exception handler to the IrqHandlerNotUsed.
-// As they are weak aliases, any function with the same name will override
-// this definition.
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// System interrupt
-//------------------------------------------------------------------------------
-WEAK void NMI_Handler(void)
-{
-	FAIL();
-    while(1);
-}
 #if 1
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-WEAK void HardFault_Handler(void)
-{
-	FAIL();
+EXCEPTION_HANDLER(HardFault_Handler)
+EXCEPTION_HANDLER(IrqHandlerNotUsed)
+EXCEPTION_HANDLER(NMI_Handler)
+EXCEPTION_HANDLER(MemManage_Handler)
+EXCEPTION_HANDLER(BusFault_Handler)
+EXCEPTION_HANDLER(UsageFault_Handler)
 
-	printf("HFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_HFSR);
-	printf("CFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_CFSR);
-	printf("MMAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_MMAR);
-	printf("BFAR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_BFAR);
-	printf("AFSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_AFSR);
-	printf("ICSR: 0x%X\r\n", AT91C_BASE_NVIC->NVIC_ICSR);
+EXCEPTION_HANDLER(SVC_Handler)
+EXCEPTION_HANDLER(DebugMon_Handler)
+EXCEPTION_HANDLER(PendSV_Handler)
+EXCEPTION_HANDLER(SYS_IrqHandler)
+EXCEPTION_HANDLER(SUPC_IrqHandler)
+EXCEPTION_HANDLER(RSTC_IrqHandler)
+EXCEPTION_HANDLER(RTC_IrqHandler)
+EXCEPTION_HANDLER(RTT_IrqHandler)
+EXCEPTION_HANDLER(WDT_IrqHandler)
+EXCEPTION_HANDLER(PMC_IrqHandler)
+EXCEPTION_HANDLER(EFC0_IrqHandler)
+EXCEPTION_HANDLER(EFC1_IrqHandler)
+EXCEPTION_HANDLER(DBGU_IrqHandler)
+EXCEPTION_HANDLER(HSMC4_IrqHandler)
+//EXCEPTION_HANDLER(PIOA_IrqHandler)
+//EXCEPTION_HANDLER(PIOB_IrqHandler)
+//EXCEPTION_HANDLER(PIOC_IrqHandler)
+EXCEPTION_HANDLER(USART0_IrqHandler)
+EXCEPTION_HANDLER(USART1_IrqHandler)
+EXCEPTION_HANDLER(USART2_IrqHandler)
+EXCEPTION_HANDLER(USART3_IrqHandler)
+//EXCEPTION_HANDLER(MCI0_IrqHandler)
+EXCEPTION_HANDLER(TWI0_IrqHandler)
+EXCEPTION_HANDLER(TWI1_IrqHandler)
+EXCEPTION_HANDLER(SPI0_IrqHandler)
+EXCEPTION_HANDLER(SSC0_IrqHandler)
+//EXCEPTION_HANDLER(TC0_IrqHandler)
+//EXCEPTION_HANDLER(TC1_IrqHandler)
+EXCEPTION_HANDLER(TC2_IrqHandler)
+EXCEPTION_HANDLER(PWM_IrqHandler)
+//EXCEPTION_HANDLER(ADCC0_IrqHandler)
+EXCEPTION_HANDLER(ADCC1_IrqHandler)
+EXCEPTION_HANDLER(HDMA_IrqHandler)
+//EXCEPTION_HANDLER(UDPD_IrqHandler)
 
-	static void *bt[20];
-	int c = backtrace(bt, 20);
-	int i;
-
-	if (0 == c)
-	{
-        printf("Stack dump:\r\n");
-        printf("&i:0x%X, &c:0x%X, stack top:0x%X\r\n", (unsigned)&i, (unsigned)&c, (unsigned)&_estack);
-        TRACE_DumpMemory((unsigned char*)&i, (char*)&_estack - (char*)&i, (unsigned)&_estack);
-	}
-	else
-	{
-	    printf("Stack dump: %d frames\r\n", c);
-	    for (i = 0; i < c; i++)
-	        printf("0x%X\r\n", (unsigned)bt[i]);
-	}
-
-	while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void MemManage_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void BusFault_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void UsageFault_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void SVC_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void DebugMon_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
-WEAK void PendSV_Handler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// for Cortex M3
-//------------------------------------------------------------------------------
-//WEAK void SysTick_Handler(void)
-//{
-//	FAIL();
-//   while(1);
-//}
-
-//------------------------------------------------------------------------------
-// External interrupt
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// for SAM7/9
-//------------------------------------------------------------------------------
-void SYS_IrqHandler( void )
-{
-	FAIL();
-    while(1);
-}
-
-
-//------------------------------------------------------------------------------
-// SUPPLY CONTROLLER
-//------------------------------------------------------------------------------
-WEAK void SUPC_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// RESET CONTROLLER
-//------------------------------------------------------------------------------
-WEAK void RSTC_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// REAL TIME CLOCK
-//------------------------------------------------------------------------------
-WEAK void RTC_IrqHandler(void)
-{
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// REAL TIME TIMER
-//------------------------------------------------------------------------------
-WEAK void RTT_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// WATCHDOG TIMER
-//------------------------------------------------------------------------------
-WEAK void WDT_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// PMC
-//------------------------------------------------------------------------------
-WEAK void PMC_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// EFC0
-//------------------------------------------------------------------------------
-WEAK void EFC0_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// EFC1
-//------------------------------------------------------------------------------
-WEAK void EFC1_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-//------------------------------------------------------------------------------
-// DBGU
-//------------------------------------------------------------------------------
-WEAK void DBGU_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// HSMC4
-//------------------------------------------------------------------------------
-WEAK void HSMC4_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// Parallel IO Controller A
-//------------------------------------------------------------------------------
-//WEAK void PIOA_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// Parallel IO Controller B
-//------------------------------------------------------------------------------
-//WEAK void PIOB_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// Parallel IO Controller C
-//------------------------------------------------------------------------------
-//WEAK void PIOC_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// USART 0
-//------------------------------------------------------------------------------
-WEAK void USART0_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// USART 1
-//------------------------------------------------------------------------------
-WEAK void USART1_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// USART 2
-//------------------------------------------------------------------------------
-WEAK void USART2_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// USART 3
-//------------------------------------------------------------------------------
-WEAK void USART3_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// Multimedia Card Interface
-//------------------------------------------------------------------------------
-//WEAK void MCI0_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// TWI 0
-//------------------------------------------------------------------------------
-WEAK void TWI0_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// TWI 1
-//------------------------------------------------------------------------------
-WEAK void TWI1_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// Serial Peripheral Interface 0
-//------------------------------------------------------------------------------
-WEAK void SPI0_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// Serial Synchronous Controller 0
-//------------------------------------------------------------------------------
-WEAK void SSC0_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// Timer Counter 0
-//------------------------------------------------------------------------------
-//WEAK void TC0_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// Timer Counter 1
-//------------------------------------------------------------------------------
-//WEAK void TC1_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// Timer Counter 2
-//------------------------------------------------------------------------------
-WEAK void TC2_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// PWM Controller
-//------------------------------------------------------------------------------
-WEAK void PWM_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// ADC controller0
-//------------------------------------------------------------------------------
-//WEAK void ADCC0_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
-
-//------------------------------------------------------------------------------
-// ADC controller1
-//------------------------------------------------------------------------------
-WEAK void ADCC1_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// HDMA
-//------------------------------------------------------------------------------
-WEAK void HDMA_IrqHandler(void)
-{
-	FAIL();
-    while(1);
-}
-
-//------------------------------------------------------------------------------
-// USB Device High Speed UDP_HS
-//------------------------------------------------------------------------------
-//WEAK void UDPD_IrqHandler(void)
-//{
-//	FAIL();
-//    while(1);
-//}
+EXCEPTION_HANDLER(RESERVED0_IrqHandler)
+EXCEPTION_HANDLER(RESERVED1_IrqHandler)
+EXCEPTION_HANDLER(RESERVED2_IrqHandler)
+EXCEPTION_HANDLER(RESERVED3_IrqHandler)
+EXCEPTION_HANDLER(RESERVED4_IrqHandler)
 
 #endif
