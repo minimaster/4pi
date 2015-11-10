@@ -44,6 +44,8 @@ extern void initadc(int);
 extern void samserial_setcallback(void (*c)(unsigned char));
 
 
+static void dump_pmc_regs();
+
 #ifndef AT91C_ID_TC0
     #define AT91C_ID_TC0 AT91C_ID_TC
 #endif
@@ -104,8 +106,8 @@ int main()
     TRACE_CONFIGURE(DBGU_STANDARD, 1000000u /*115200*/, BOARD_MCK);
     printf("-- %s\r\n", BOARD_NAME);
     printf("-- Compiled: %s %s --\r\n", __DATE__, __TIME__);
+    dump_pmc_regs();
 
-    printf("%s:%u: current_block: 0x%X\r\n", __FILE__, __LINE__, (unsigned)current_block);
     // If they are present, configure Vbus & Wake-up pins
     //PIO_InitializeInterrupts(0);
 
@@ -161,12 +163,31 @@ int main()
 
 	//motor_enaxis(0,1);
     //motor_enaxis(1,1);
+	dump_pmc_regs();
 	printf("Main loop\r\n");
 	while (1)
 	{
 		do_periodic();
 		gcode_update();
     }
+}
+
+void dump_pmc_regs()
+{
+#define P(reg) printf("PMC " #reg " 0x04%X: 0x%04X\r\n", offsetof(AT91S_PMC, PMC_##reg), AT91C_BASE_PMC->PMC_##reg)
+    P(SCSR);
+    P(PCSR);
+    P(UCKR);
+    P(MOR);
+    P(MCFR);
+    P(PLLAR);
+    P(MCKR);
+    P(PCKR[0]); P(PCKR[1]); P(PCKR[2]); P(PCKR[3]);
+    P(PCKR[4]); P(PCKR[5]); P(PCKR[6]); P(PCKR[7]);
+    P(SR); P(IMR);
+    P(FSMR);
+    P(FSPR);
+#undef P
 }
 
 /**
