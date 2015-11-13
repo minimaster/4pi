@@ -83,10 +83,10 @@
 //-----------------------------------------------------------------------
 // Inverting axis direction
 //-----------------------------------------------------------------------
-#define _INVERT_X_DIR 	false
-#define _INVERT_Y_DIR 	false
-#define _INVERT_Z_DIR 	true
-#define _INVERT_E_DIR 	false
+#define _INVERT_X_DIR 	true
+#define _INVERT_Y_DIR 	true
+#define _INVERT_Z_DIR 	false
+#define _INVERT_E_DIR 	true
 
 //-----------------------------------------------------------------------
 //// HOMING SETTINGS:
