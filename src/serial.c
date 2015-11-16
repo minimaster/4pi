@@ -41,6 +41,7 @@
 #include <stdarg.h>
 #include "util.h"
 #include "serial.h"
+#include "globals.h"
 
 //------------------------------------------------------------------------------
 //      Definitions
@@ -222,6 +223,7 @@ void usb_printf(const char * format, ...)
 	unsigned int timeout = 200;  // was 1000
 	while(bufferInUse && timeout--)
 	{
+	    do_periodic();
 		delay_ms(1);
 	}
 

@@ -22,4 +22,6 @@ extern unsigned long max_inactive_time;
 extern unsigned long stepper_inactive_time;
 extern volatile unsigned long timestamp;
 
+void do_periodic(void);
+
 #endif /* end of include guard: GCODE_PARAMS_H_RBHAFQY3 */

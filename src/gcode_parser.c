@@ -153,7 +153,6 @@ typedef struct
 	uint8_t buffer[BUFFER_SIZE];
 } RingBuffer;
 
-
 void ringbuffer_init(RingBuffer* pBuffer)
 {
 	memset(pBuffer,0,sizeof(RingBuffer));
@@ -334,8 +333,8 @@ static int gcode_process_command()
 					st_synchronize();  // wait for all movements to finish
 
 					while(timestamp	 < wait_until )
-					{
-					}
+					    do_periodic();
+
 					break;
 				}
 				case 21:
@@ -560,6 +559,7 @@ static int gcode_process_command()
 
 						while(1)
 						{
+						    do_periodic();
 							if (heater->akt_temp < min_target || heater->akt_temp > max_target)
 							{
 								residencyStart = -1;
@@ -584,6 +584,7 @@ static int gcode_process_command()
 					#else
 						while(1)
 						{
+						    do_periodic();
 							if (heater->akt_temp < min_target || heater->akt_temp > max_target)
 							{
 								if( (timestamp - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up/cooling down
@@ -665,6 +666,8 @@ static int gcode_process_command()
 					uint32_t codenum = timestamp;
 					while(bed_heater.akt_temp < bed_heater.target_temp) 
 					{
+					    do_periodic();
+
 						if( (timestamp - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
 						{
 							heater_struct* heater = get_heater(GET('T',GET('P',active_extruder)));
@@ -1192,48 +1195,51 @@ void gcode_update()
 		}
 		
 	}
-	if(parserState.commandLen == 0 && sdcard_isreplaying() && !sdcard_isreplaypaused()){
+	if(parserState.commandLen == 0 && sdcard_isreplaying() && !sdcard_isreplaypaused())
+	{
 		int newline=0;
         unsigned char nchar=0;
-		while(!newline){
+		while(!newline)
+		{
 			int x=sdcard_getchar(&nchar);
-			if(!x){
+			if(!x)
+			{
 				sendReply("Done printing file\r\n");
 				sdcard_replaystop();
 				newline=1;
 				break;
 			}
 //			printf("%c\r\n",nchar);
-		switch(nchar)
-		{
-			case '\0':
-				newline=1;
-				break;
-			case ';':
-			case '(':
-				parserState.comment_mode = true;
-				break;
-			case '\n':
-			case '\r':
-				parserState.commandBuffer[parserState.commandLen] = 0;
-				parserState.parsePos = parserState.commandBuffer;
-				gcode_line_received();
-				parserState.comment_mode = false;
-				parserState.commandLen = 0;
-				newline=1;
-				break;
-			default:
-				if (parserState.commandLen >= BUFFER_SIZE)
-				{
-					printf("error: command buffer full!\r\n");
-				}
-				else
-				{
-					if (!parserState.comment_mode)
-						parserState.commandBuffer[parserState.commandLen++] = nchar;
-				}
-				break;
-		}
+            switch(nchar)
+            {
+                case '\0':
+                    newline=1;
+                    break;
+                case ';':
+                case '(':
+                    parserState.comment_mode = true;
+                    break;
+                case '\n':
+                case '\r':
+                    parserState.commandBuffer[parserState.commandLen] = 0;
+                    parserState.parsePos = parserState.commandBuffer;
+                    gcode_line_received();
+                    parserState.comment_mode = false;
+                    parserState.commandLen = 0;
+                    newline=1;
+                    break;
+                default:
+                    if (parserState.commandLen >= BUFFER_SIZE)
+                    {
+                        printf("error: command buffer full!\r\n");
+                    }
+                    else
+                    {
+                        if (!parserState.comment_mode)
+                            parserState.commandBuffer[parserState.commandLen++] = nchar;
+                    }
+                    break;
+            }
 	
 		}
 	}

@@ -677,6 +677,7 @@ void st_synchronize()
 	while(blocks_queued()) 
 	{
 		manage_inactivity(1);
+		do_periodic();
 	}   
 }
 
@@ -728,7 +729,8 @@ void plan_buffer_line(float x, float y, float z, float e, float feed_rate, unsig
 	while(block_buffer_tail == next_buffer_head)
 	{ 
 		//manage_heater(); 
-		manage_inactivity(1); 
+		manage_inactivity(1);
+		do_periodic();
 	}
     
 		// The target position of the tool in absolute steps
