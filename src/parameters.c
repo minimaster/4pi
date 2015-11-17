@@ -280,7 +280,7 @@ void FLASH_PrintSettings(void)
 
 void FLASH_Store_to_SD(void)
 {
-	char c_string[100];
+	char buf[100];
 
 	if(sdcard_iscapturing())
 	{
@@ -302,72 +302,72 @@ void FLASH_Store_to_SD(void)
 	}
 
 
-	sprintf(c_string,"M207 X%d Y%d Z%d\r",(int)pa.homing_feedrate[0],(int)pa.homing_feedrate[1],(int)pa.homing_feedrate[2]);
+	snprintf(buf, sizeof(buf), "M207 X%d Y%d Z%d\r",(int)pa.homing_feedrate[0],(int)pa.homing_feedrate[1],(int)pa.homing_feedrate[2]);
 	// \n is send with sdcard_writeline
-	sdcard_writeline(c_string);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M92 X%d Y%d Z%d E%d\r",(int)pa.axis_steps_per_unit[0],(int)pa.axis_steps_per_unit[1],(int)pa.axis_steps_per_unit[2],(int)pa.axis_steps_per_unit[3]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M202 X%d Y%d Z%d E%d \r",(int)pa.max_feedrate[0],(int)pa.max_feedrate[1],(int)pa.max_feedrate[2],(int)pa.max_feedrate[3]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M201 X%d Y%d Z%d E%d\r",(int)pa.max_acceleration_units_per_sq_second[0],(int)pa.max_acceleration_units_per_sq_second[1],(int)pa.max_acceleration_units_per_sq_second[2],(int)pa.max_acceleration_units_per_sq_second[3]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M204 S%d T%d\r",(int)pa.move_acceleration,(int)pa.retract_acceleration);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M205 S%d T%d X%d Z%d E%d\r",(int)pa.minimumfeedrate,(int)pa.mintravelfeedrate,(int)pa.max_xy_jerk,(int)pa.max_z_jerk,(int)pa.max_e_jerk);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M92 X%d Y%d Z%d E%d\r",(int)pa.axis_steps_per_unit[0],(int)pa.axis_steps_per_unit[1],(int)pa.axis_steps_per_unit[2],(int)pa.axis_steps_per_unit[3]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M202 X%d Y%d Z%d E%d \r",(int)pa.max_feedrate[0],(int)pa.max_feedrate[1],(int)pa.max_feedrate[2],(int)pa.max_feedrate[3]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M201 X%d Y%d Z%d E%d\r",(int)pa.max_acceleration_units_per_sq_second[0],(int)pa.max_acceleration_units_per_sq_second[1],(int)pa.max_acceleration_units_per_sq_second[2],(int)pa.max_acceleration_units_per_sq_second[3]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M204 S%d T%d\r",(int)pa.move_acceleration,(int)pa.retract_acceleration);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M205 S%d T%d X%d Z%d E%d\r",(int)pa.minimumfeedrate,(int)pa.mintravelfeedrate,(int)pa.max_xy_jerk,(int)pa.max_z_jerk,(int)pa.max_e_jerk);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M520 X%d Y%d Z%d\r",(int)pa.x_max_length,(int)pa.y_max_length,(int)pa.z_max_length);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M521 X%d Y%d Z%d E%d\r",pa.disable_x_en,pa.disable_y_en,pa.disable_z_en,pa.disable_e_en);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M520 X%d Y%d Z%d\r",(int)pa.x_max_length,(int)pa.y_max_length,(int)pa.z_max_length);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M521 X%d Y%d Z%d E%d\r",pa.disable_x_en,pa.disable_y_en,pa.disable_z_en,pa.disable_e_en);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M522 I%d A%d\r",pa.min_software_endstops,pa.max_software_endstops);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M522 I%d A%d\r",pa.min_software_endstops,pa.max_software_endstops);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M523 X%d Y%d Z%d\r",pa.x_min_endstop_aktiv,pa.y_min_endstop_aktiv,pa.z_min_endstop_aktiv);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M524 X%d Y%d Z%d\r",pa.x_max_endstop_aktiv,pa.y_max_endstop_aktiv,pa.z_max_endstop_aktiv);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M523 X%d Y%d Z%d\r",pa.x_min_endstop_aktiv,pa.y_min_endstop_aktiv,pa.z_min_endstop_aktiv);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M524 X%d Y%d Z%d\r",pa.x_max_endstop_aktiv,pa.y_max_endstop_aktiv,pa.z_max_endstop_aktiv);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M525 X%d Y%d Z%d\r",pa.x_home_dir,pa.y_home_dir,pa.z_home_dir);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M526 X%d Y%d Z%d\r",pa.x_endstop_invert,pa.y_endstop_invert,pa.z_endstop_invert);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M510 X%d Y%d Z%d E%d\r",pa.invert_x_dir,pa.invert_y_dir,pa.invert_z_dir,pa.invert_e_dir);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M525 X%d Y%d Z%d\r",pa.x_home_dir,pa.y_home_dir,pa.z_home_dir);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M526 X%d Y%d Z%d\r",pa.x_endstop_invert,pa.y_endstop_invert,pa.z_endstop_invert);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M510 X%d Y%d Z%d E%d\r",pa.invert_x_dir,pa.invert_y_dir,pa.invert_z_dir,pa.invert_e_dir);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M301 T0 P%d I%d D%d\r",(int)pa.heater_pTerm[0],(int)pa.heater_iTerm[0],(int)pa.heater_dTerm[0]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M301 T1 P%d I%d D%d\r",(int)pa.heater_pTerm[1],(int)pa.heater_iTerm[1],(int)pa.heater_dTerm[1]);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M301 T0 P%d I%d D%d\r",(int)pa.heater_pTerm[0],(int)pa.heater_iTerm[0],(int)pa.heater_dTerm[0]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M301 T1 P%d I%d D%d\r",(int)pa.heater_pTerm[1],(int)pa.heater_iTerm[1],(int)pa.heater_dTerm[1]);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M530 T0 E%d\r",pa.heater_thermistor_type[0]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M530 T1 E%d\r",pa.heater_thermistor_type[1]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M530 B%d\r",pa.bed_thermistor_type);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M530 T0 E%d\r",pa.heater_thermistor_type[0]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M530 T1 E%d\r",pa.heater_thermistor_type[1]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M530 B%d\r",pa.bed_thermistor_type);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M531 T0 E%d\r",pa.heater_pwm_en[0]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M531 T1 E%d\r",pa.heater_pwm_en[1]);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M531 T0 E%d\r",pa.heater_pwm_en[0]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M531 T1 E%d\r",pa.heater_pwm_en[1]);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M301 T0 W%d\r",pa.heater_max_pwm[0]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M301 T1 W%d\r",pa.heater_max_pwm[1]);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M301 T0 W%d\r",pa.heater_max_pwm[0]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M301 T1 W%d\r",pa.heater_max_pwm[1]);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M301 T0 S%d I%d\r",pa.heater_slope[0],pa.heater_intercept[0]);
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M301 T1 S%d I%d\r",pa.heater_slope[1],pa.heater_intercept[1]);
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M301 T0 S%d I%d\r",pa.heater_slope[0],pa.heater_intercept[0]);
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M301 T1 S%d I%d\r",pa.heater_slope[1],pa.heater_intercept[1]);
+	sdcard_writeline(buf);
 
-	sprintf(c_string,"M906 X%d Y%d Z%d E%d B%d\r",count_ma(pa.axis_current[0]),count_ma(pa.axis_current[1]),count_ma(pa.axis_current[2]),count_ma(pa.axis_current[3]),count_ma(pa.axis_current[4]));
-	sdcard_writeline(c_string);
-	sprintf(c_string,"M350 X%d Y%d Z%d E%d B%d\r",microstep_usteps(pa.axis_ustep[0]),microstep_usteps(pa.axis_ustep[1]),microstep_usteps(pa.axis_ustep[2]),microstep_usteps(pa.axis_ustep[3]),microstep_usteps(pa.axis_ustep[4]));
-	sdcard_writeline(c_string);
+	snprintf(buf, sizeof(buf), "M906 X%d Y%d Z%d E%d B%d\r",count_ma(pa.axis_current[0]),count_ma(pa.axis_current[1]),count_ma(pa.axis_current[2]),count_ma(pa.axis_current[3]),count_ma(pa.axis_current[4]));
+	sdcard_writeline(buf);
+	snprintf(buf, sizeof(buf), "M350 X%d Y%d Z%d E%d B%d\r",microstep_usteps(pa.axis_ustep[0]),microstep_usteps(pa.axis_ustep[1]),microstep_usteps(pa.axis_ustep[2]),microstep_usteps(pa.axis_ustep[3]),microstep_usteps(pa.axis_ustep[4]));
+	sdcard_writeline(buf);
 
 
 	sdcard_capturestop();

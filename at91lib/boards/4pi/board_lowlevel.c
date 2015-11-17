@@ -102,6 +102,7 @@ void LowLevelInit(void)
     
     /* Enable NRST reset
      ************************************/
+    // TODO: Looks like this is required for JTAG
     //AT91C_BASE_RSTC->RSTC_RMR |= (0xA5 << 24) | AT91C_RSTC_URSTEN;
     
     /* Set 2 WS for Embedded Flash Access

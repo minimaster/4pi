@@ -104,7 +104,7 @@ CFLAGS += -Wall -mlong-calls -ffunction-sections -fdata-sections
 CFLAGS += -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -DTRACE_LEVEL=$(TRACE_LEVEL)
 ASFLAGS = $(TARGET_OPTS) -Wall -g $(OPTIMIZATION) $(INCLUDES) -D$(CHIP) -D__ASSEMBLY__
 LDFLAGS = -g $(OPTIMIZATION) -Wl,-cref -nostartfiles -nostdlib $(TARGET_OPTS) -Wl,--gc-sections -Wl,-Map=$(OUTPUT).map
-LDLIBS =   -lgcc -lm -lc
+LDLIBS =   -lgcc -lm #-lc
 
 #-------------------------------------------------------------------------------
 #		Files
@@ -207,7 +207,9 @@ C_SOURCES += sdcard.c
 C_SOURCES += gcode_parser.c
 C_SOURCES += globals.c
 C_SOURCES += strtod.c
-
+C_SOURCES += strtoul.c
+C_SOURCES += strcmp.c
+C_SOURCES += errno.c
 #media
 C_SOURCES += Media.c
 C_SOURCES += MEDSdcard.c

@@ -461,10 +461,10 @@ signed int vfprintf(FILE *pStream, const char *pFormat, va_list ap)
     static const char pError[] = "stdio.c: increase MAX_STRING_SIZE\r\n";
 
     // Write formatted string in buffer
-    if (vsprintf(pStr, pFormat, ap) >= MAX_STRING_SIZE) {
+    if (vsnprintf(pStr, sizeof(pStr), pFormat, ap) >= sizeof(pStr)) {
 
         fputs(pError, stderr);
-        while (1); // Increase MAX_STRING_SIZE
+        //while (1); // Increase MAX_STRING_SIZE
     }
 
     // Display string
@@ -520,6 +520,17 @@ signed int printf(const char *pFormat, ...)
 }
 
 //------------------------------------------------------------------------------
+/// Outputs a string on stdout.
+/// \param pStr  String to output.
+//------------------------------------------------------------------------------
+signed int puts(const char *pStr)
+{
+    return fputs(pStr, stdout);
+}
+
+
+#if 0
+//------------------------------------------------------------------------------
 /// Writes a formatted string inside another string.
 /// \param pStr  Storage string.
 /// \param pFormat  Format string.
@@ -537,14 +548,7 @@ signed int sprintf(char *pStr, const char *pFormat, ...)
     return result;
 }
 
-//------------------------------------------------------------------------------
-/// Outputs a string on stdout.
-/// \param pStr  String to output.
-//------------------------------------------------------------------------------
-signed int puts(const char *pStr)
-{
-    return fputs(pStr, stdout);
-}
+
 
 char* ftostr( char* buffer, double value)
 {
@@ -565,5 +569,4 @@ char* ftostr( char* buffer, double value)
 
     return buffer ;
 }
-
-
+#endif

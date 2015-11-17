@@ -189,7 +189,7 @@ static void UsbDataReceived(unsigned int unused,
     }
     else
     {
-        puts("UsbDataReceived: Transfer error\r");
+        printf("UsbDataReceived: Transfer error\r\n");
 
         //  TRACE_WARNING( "UsbDataReceived: Transfer error\r\n");
     }
@@ -236,7 +236,7 @@ void usb_printf(const char * format, ...)
 	unsigned int str_len = 0;
 	va_list args;
 	va_start (args, format);
-	str_len = vsprintf (printBuffer,format, args);
+	str_len = vsnprintf(printBuffer, sizeof(printBuffer), format, args);
 	va_end (args);
 
 	bufferInUse = 1;

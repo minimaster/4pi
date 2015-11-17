@@ -66,7 +66,7 @@ void SysTick_Handler(void)
 }
 
 unsigned long oldtimestamp=1;
-void do_periodic()
+void do_periodic(void)
 {
 	if (timestamp == oldtimestamp)
 		return;
